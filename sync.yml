@@ -1,0 +1,21 @@
+name: NBA Data Sync
+on:
+  schedule:
+    - cron: '0 * * * *' # Co godzinę
+  workflow_dispatch: # Możliwość ręcznego odpalenia
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Data
+        run: |
+          curl "https://www.bovada.lv/services/sports/event/v2/events/A/description/basketball/nba?marketFilterId=def&includeDirectAncestors=true" \
+          -H "User-Agent: Mozilla/5.0" > nba_data.json
+      - name: Commit and Push
+        run: |
+          git config --global user.name "Bot"
+          git config --global user.email "bot@github.com"
+          git add nba_data.json
+          git commit -m "Update NBA data" || exit 0
+          git push
