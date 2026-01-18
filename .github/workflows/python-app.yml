@@ -1,4 +1,4 @@
-name: NBA Data Sync 123
+name: NBA Data Sync!
 on:
   schedule:
     - cron: '0 * * * *'
@@ -13,57 +13,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: Install Playwright
+      - name: Fetch NBA Props
         run: |
-          pip install playwright
-          playwright install chromium
-
-      - name: Scrape Visible Table
-        run: |
-          python -c "
-          import json, time
-          from playwright.sync_api import sync_playwright
+          # Pobieramy dane z publicznego, stabilnego źródła danych dziennych
+          curl "https://api.actionnetwork.com/web/v1/leagues/7/props/core?bookIds=15,30,76,75" \
+          -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
+          -o nba_data.json
           
-          def run():
-              with sync_playwright() as p:
-                  browser = p.chromium.launch(headless=True)
-                  page = browser.new_page()
-                  print('Wchodzę na stronę...')
-                  
-                  # Wchodzimy na stronę główną propsów
-                  page.goto('https://www.rotowire.com/betting/nba/player-props.php', wait_until='networkidle')
-                  time.sleep(10) # Dajemy czas na załadowanie tabeli JS
-                  
-                  # Wyciągamy wszystkie wiersze z tabeli propsów
-                  # Szukamy elementów wewnątrz komponentu tabeli
-                  rows = page.query_selector_all('tr')
-                  
-                  extracted_data = []
-                  for row in rows:
-                      text = row.inner_text()
-                      # Jeśli wiersz zawiera 'PTS' lub 'Points', zapisujemy go
-                      if 'PTS' in text or 'Points' in text:
-                          extracted_data.append(text)
-                  
-                  if extracted_data:
-                      with open('nba_data.json', 'w') as f:
-                          json.dump(extracted_data, f)
-                      print(f'Sukces! Pobrano {len(extracted_data)} wierszy.')
-                  else:
-                      # Plan B: Spróbujmy wyciągnąć całe body strony, jeśli tabela jest inaczej nazwana
-                      body = page.inner_text('body')
-                      with open('nba_data.json', 'w') as f:
-                          f.write(body)
-                      print('Zapisano surowy tekst strony do analizy.')
-                  
-                  browser.close()
-          run()
-          "
+          # Sprawdzenie czy dane weszły (wyświetli początek pliku w logach)
+          head -c 200 nba_data.json
 
       - name: Commit and Push
         run: |
