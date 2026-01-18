@@ -1,4 +1,4 @@
-name: NBA Data Sync
+name: NBA Data Sync Play
 on:
   schedule:
     - cron: '0 * * * *' # Co godzinę
