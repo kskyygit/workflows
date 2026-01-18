@@ -1,4 +1,4 @@
-name: NBA Data Sync
+name: NBA Data Sync 123
 on:
   schedule:
     - cron: '0 * * * *'
