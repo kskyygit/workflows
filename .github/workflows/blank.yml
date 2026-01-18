@@ -1,0 +1,27 @@
+name: NBA Data Sync
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fetch NBA Props
+        run: |
+          curl "https://www.bovada.lv/services/sports/event/v2/events/A/description/basketball/nba?marketFilterId=def&includeDirectAncestors=true" \
+          -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" > nba_data.json
+
+      - name: Commit and Push
+        run: |
+          git config --global user.name "NBA-Bot"
+          git config --global user.email "bot@github.com"
+          git add nba_data.json
+          git commit -m "Update NBA Data: $(date)" || exit 0
+          git push
