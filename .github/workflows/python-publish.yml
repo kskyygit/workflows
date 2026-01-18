@@ -1,0 +1,32 @@
+name: NBA Data Sync USA
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Fetch Data from USA
+        run: |
+          # Pobieramy dane z Action Network (unlimited, brak limitu 500 zapytań)
+          curl -L "https://api.actionnetwork.com/web/v1/leagues/7/props/core?bookIds=15,30,76,75" \
+          -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
+          -o nba_data.json
+          
+          # Sprawdzenie rozmiaru pliku w logach - jeśli zobaczysz np. 200K, to znaczy że działa!
+          ls -lh nba_data.json
+
+      - name: Commit and Push
+        run: |
+          git config --global user.name "NBA-Bot"
+          git config --global user.email "bot@github.com"
+          git add nba_data.json
+          git commit -m "Update NBA Data: $(date)" || exit 0
+          git push
