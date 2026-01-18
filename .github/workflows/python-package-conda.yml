@@ -1,0 +1,35 @@
+name: NBA Data Sync Browser
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Playwright
+        run: |
+          pip install playwright
+          playwright install chromium
+
+      - name: Run Scraper
+        run: python scraper.py
+
+      - name: Commit and Push
+        run: |
+          git config --global user.name "NBA-Bot"
+          git config --global user.email "bot@github.com"
+          git add nba_data.json
+          git commit -m "Update NBA Data: $(date)" || exit 0
+          git push
