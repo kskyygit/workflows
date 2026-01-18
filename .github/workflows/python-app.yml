@@ -1,0 +1,59 @@
+name: NBA Data Sync USA
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Playwright
+        run: |
+          pip install playwright
+          playwright install chromium
+
+      - name: Scrape Rotowire
+        run: |
+          python -c "
+          import json, time
+          from playwright.sync_api import sync_playwright
+          
+          def run():
+              with sync_playwright() as p:
+                  browser = p.chromium.launch(headless=True)
+                  page = browser.new_page()
+                  # Wchodzimy na stronę, którą widziałeś na PC
+                  page.goto('https://www.rotowire.com/betting/nba/player-props.php', wait_until='networkidle')
+                  time.sleep(5)
+                  
+                  # Wyciągamy dane z zmiennej JS, którą widziałeś w kodzie strony
+                  data = page.evaluate('() => { return (typeof data !== \"undefined\") ? data : []; }')
+                  
+                  if data:
+                      with open('nba_data.json', 'w') as f:
+                          json.dump(data, f)
+                      print(f'Sukces! Pobrano {len(data)} rekordów.')
+                  else:
+                      print('Błąd: Nie znaleziono zmiennej data.')
+                  browser.close()
+          run()
+          "
+
+      - name: Commit and Push
+        run: |
+          git config --global user.name "NBA-Bot"
+          git config --global user.email "bot@github.com"
+          git add nba_data.json
+          git commit -m "Update NBA Data: $(date)" || exit 0
+          git push
