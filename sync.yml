@@ -2,20 +2,34 @@ name: NBA Data Sync
 on:
   schedule:
     - cron: '0 * * * *' # Co godzinę
-  workflow_dispatch: # Możliwość ręcznego odpalenia
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - name: Fetch Data
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
         run: |
-          curl "https://www.bovada.lv/services/sports/event/v2/events/A/description/basketball/nba?marketFilterId=def&includeDirectAncestors=true" \
-          -H "User-Agent: Mozilla/5.0" > nba_data.json
+          pip install playwright
+          playwright install chromium
+
+      - name: Run Scraper
+        run: python scraper.py
+
       - name: Commit and Push
         run: |
-          git config --global user.name "Bot"
+          git config --global user.name "NBA-Bot"
           git config --global user.email "bot@github.com"
           git add nba_data.json
-          git commit -m "Update NBA data" || exit 0
+          git commit -m "Update NBA Data: $(date)" || exit 0
           git push
